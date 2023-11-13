@@ -61,9 +61,9 @@ function MaterialTableComponent() {
 
   // CONFIG TABLE
   const [columns, setColumns] = useState([
-    { title: "Activity", field: "name" },
+    { title: "กิจกรรม", field: "name" },
     {
-      title: "Date",
+      title: "วัน",
       field: "date",
       type: "date",
       render: (data) => {
@@ -87,7 +87,7 @@ function MaterialTableComponent() {
     },
 
     {
-      title: "Time",
+      title: "เวลา",
       field: "time",
       type: "time",
       render: (data) => {
@@ -165,7 +165,7 @@ function MaterialTableComponent() {
       <ThemeProvider theme={defaultMaterialTheme}>
         <MaterialTable
           icons={tableIcons}
-          title="Test Table"
+          title="To Do"
           columns={columns}
           data={data}
           editable={{

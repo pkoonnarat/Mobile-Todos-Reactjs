@@ -27,8 +27,8 @@ function MainPage() {
             alignItems: "center",
           }}
         >
-          <Typography component="h1" variant="h5">
-            Main Page
+          <Typography component="h1" variant="h5" fontFamily={"Kanit"}>
+            ระบบจัดการกิจกรรม
           </Typography>
           <br />
           <MaterialTableComponent />
