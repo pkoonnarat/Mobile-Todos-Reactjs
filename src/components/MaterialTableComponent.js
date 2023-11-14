@@ -17,11 +17,14 @@ import SaveAlt from "@material-ui/icons/SaveAlt";
 import Search from "@material-ui/icons/Search";
 import ViewColumn from "@material-ui/icons/ViewColumn";
 import moment from "moment";
+import 'moment/locale/th';
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { useCookies } from "react-cookie";
-
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 //import moment from "moment";
 import {
   KeyboardTimePicker,
@@ -30,7 +33,12 @@ import {
 } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 
+import {DateTimePicker,LocalizationProvider} from "@mui/x-date-pickers";
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+
+
 function MaterialTableComponent() {
+
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
     Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -58,56 +66,29 @@ function MaterialTableComponent() {
     )),
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
   };
-
+  const [update,setUpdate] = useState(0);
   // CONFIG TABLE
   const [columns, setColumns] = useState([
+    //{ title:"ID", field: "id", editable: "never", hidden: true},
     { title: "กิจกรรม", field: "name" },
     {
       title: "วัน",
-      field: "date",
-      type: "date",
+      field: "datetime",
+      type: "datetime",
       render: (data) => {
         //console.log(data.date);
-        return moment(data.date).format("LL");
+        return dayjs(data.datetime).format('lll');
       },
 
       editComponent: ({ value, onChange }) => (
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <KeyboardDatePicker
-            margin="normal"
-            id="date-picker-dialog"
-            value={value}
-            onChange={onChange}
-            KeyboardButtonProps={{
-              "aria-label": "change date",
-            }}
-          />
-        </MuiPickersUtilsProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="th">
+      <DateTimePicker
+        label="Controlled picker"
+        value={dayjs(value)}
+        onChange={(newValue) => onChange(newValue)}
+      /></LocalizationProvider>
       ),
-    },
-
-    {
-      title: "เวลา",
-      field: "time",
-      type: "time",
-      render: (data) => {
-        console.log(data.time);
-        return moment(data.time).format("hh:mm A");
-      },
-      editComponent: ({ value, onChange }) => (
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <KeyboardTimePicker
-            margin="normal"
-            id="time-picker"
-            value={value}
-            onChange={onChange}
-            KeyboardButtonProps={{
-              "aria-label": "change time",
-            }}
-          />
-        </MuiPickersUtilsProvider>
-      ),
-    },
+    }
   ]);
 
   // get variables from auth provider
@@ -119,46 +100,82 @@ function MaterialTableComponent() {
   let [cookies, setCookie] = useCookies(["token"]);
 
   useEffect(() => {
-    // เขียนโค้ด Fetch Data จาก database ด้วย API ตรงนี้ แล้วเอาไปเซ็ทแบบข้างล่าง
-    // อันนี้คือมันจะรันตอนเปิดเว็บทีเดียว เพื่อดึง data จาก database มาแสดงในตาราง
-    //
-    // เวลา query คือใข้ variable }{token คือสตริงค่า salt ที่เซ็ทจากหน้า login เอาไว้ query ตาม user เก็ตแหละ
-    // ประมาณแบบ
-    // Axios.get('http://localhost:3000/activities').then((response) => {
-    //     setData(response.data); ไม่รู้ต้องปรับ data type json ไรอีกมั้ย ให้มันเป็น Array ของ object หน้าตาแบบข้างล่าง
-    // });
-    // อันนี้ตัวอย่าง 2 record
-    console.log("getting data");
-    console.log(token);
+    // Data Shape: id (INT), userId (STR), name (STR), when (STR in DATETIME format), user (คือรัย)
+
+    // axios
+    //   .get(`https://localhost:7294/Activities/`, {
+    //     headers: {
+    //       Authorization: "Bearer " + token,
+    //       timeout: 10 * 1000,
+    //     },
+    //   })
+    //   .then((response) => {
+      // แก้ให้แยก date time เพิ่ม
+    //     setData(response.data);
+    //     console.log(response.data);
+    //   })
+    //   .catch((error) => {
+    //     if (error.code === "ECONNABORTED") {
+    //       console.log("timeout");
+    //     } else {
+    //       console.log(error.response.status);
+    //       console.log(error);
+    //     }
+    //   });
+    setData([{id:123, userId:1234, name:"kill myself", datetime:"2022-04-17T15:30", user:"test"},
+             {id:124, userId:1234, name:"now", datetime:'2022-04-17T15:50', user:"test"}])
+
+
+  }, [update]);
+
+  const rowUpdateHandler = (data) => {
+    data.datetime = dayjs(data.datetime).format("YYYY-MM-DDTHH:mm:ss");
+    var addRow = {name:data.name, datetime:data.datetime}
+    // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
+    console.log(`Updating id: ${data.id}`);
+    console.log(addRow);
     axios
-      .get(`https://localhost:7294/Activities/`, {
+      .put(`https://localhost:7294/Activities/${data.id}`, {
         headers: {
           Authorization: "Bearer " + token,
           timeout: 10 * 1000,
         },
-      })
-      .then((response) => {
-        setData(response.data);
-        console.log(response.data);
-      })
-      .catch((error) => {
-        if (error.code === "ECONNABORTED") {
-          console.log("timeout");
-        } else {
-          console.log(error.response.status);
-          console.log(error);
-        }
+        body: {addRow},
       });
-  }, []);
-
-  const rowUpdateHandler = (data) => {
-    // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
-    axios
-      .put(`http://localhost:3000/activities/${data.id}`, data)
-      .then((response) => {
-        console.log(response);
-      });
+      setUpdate(update+1);
   };
+
+
+
+  const rowAddHandler = (data) => {
+    
+    data.datetime = dayjs(data.datetime).format("YYYY-MM-DDTHH:mm:ss");
+    var addRow = {name:data.name, datetime:data.datetime}
+    console.log(addRow);
+    axios
+    .post(`https://localhost:7294/Activities/`, {
+          headers: {
+            Authorization: "Bearer " + token,
+            timeout: 10 * 1000,
+          },
+          body: {addRow}}
+    );
+    setUpdate(update+1);
+  };
+
+  const rowDeleteHandler = (data) => {
+    // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
+    console.log(`Deleting id: ${data.id}`);
+    axios
+    .delete(`https://localhost:7294/Activities/${data.id}`, {
+      headers: {
+        Authorization: "Bearer " + token,
+        timeout: 10 * 1000,
+      }
+    }
+    );
+    setUpdate(update+1);
+  }
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -187,9 +204,7 @@ function MaterialTableComponent() {
               new Promise((resolve, reject) => {
                 setTimeout(() => {
                   setData([...data, newData]);
-                  //SET TABLE ใน DATABASE ด้วยค่า [...data,newData] ตรงนี้
-                  // อันนี้เขียนฟังก์ชั่น rowUpdateHandler ไว้ให้ หรือจะคอล Axios ในนี้เลยก็ได้ คืออีกสองอันล่างมันคอลคล้าย ๆ กัน เลยรวบเป็นฟังก์ชั่นเดียว
-                  rowUpdateHandler([...data, newData]);
+                  rowAddHandler(newData);
                   //
                   resolve();
                 }, 1000);
@@ -201,6 +216,7 @@ function MaterialTableComponent() {
                   const index = oldData.tableData.id;
                   dataUpdate[index] = newData;
                   setData([...dataUpdate]);
+                  rowUpdateHandler(newData);
                   //SET TABLE ใน DATABASE ด้วย [...dataUpdate]
                   // ก็เหมือนเดิม จะคอลในนี้หรือใช้ฟังก์ชั่น rowUpdateHandler ก็ได้
                   resolve();
@@ -215,6 +231,7 @@ function MaterialTableComponent() {
                   setData([...dataDelete]);
                   //SET TABLE ใน DATABASE ด้วย [...dataDelete]
                   // ก็เหมือนเดิม จะคอลในนี้หรือใช้ฟังก์ชั่น rowUpdateHandler ก็ได้
+                  rowDeleteHandler(oldData);
                   resolve();
                 }, 1000);
               }),
