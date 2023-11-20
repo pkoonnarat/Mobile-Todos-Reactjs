@@ -17,14 +17,15 @@ import SaveAlt from "@material-ui/icons/SaveAlt";
 import Search from "@material-ui/icons/Search";
 import ViewColumn from "@material-ui/icons/ViewColumn";
 import moment from "moment";
-import 'moment/locale/th';
+import "moment/locale/th";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { useCookies } from "react-cookie";
-import dayjs from 'dayjs';
-import 'dayjs/locale/th';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+import "./MaterialTableComponent.css";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 //import moment from "moment";
 import {
   KeyboardTimePicker,
@@ -33,12 +34,10 @@ import {
 } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 
-import {DateTimePicker,LocalizationProvider} from "@mui/x-date-pickers";
-import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
-
+import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 function MaterialTableComponent() {
-
   const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
     Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -66,29 +65,31 @@ function MaterialTableComponent() {
     )),
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
   };
-  const [update,setUpdate] = useState(0);
+  const [update, setUpdate] = useState(0);
+  dayjs.locale("th");
   // CONFIG TABLE
   const [columns, setColumns] = useState([
     //{ title:"ID", field: "id", editable: "never", hidden: true},
     { title: "กิจกรรม", field: "name" },
     {
       title: "วัน",
-      field: "datetime",
-      type: "datetime",
+      field: "when",
+      type: "when",
       render: (data) => {
         //console.log(data.date);
-        return dayjs(data.datetime).format('lll');
+        return dayjs(data.when).format("lll");
       },
 
       editComponent: ({ value, onChange }) => (
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="th">
-      <DateTimePicker
-        label="Controlled picker"
-        value={dayjs(value)}
-        onChange={(newValue) => onChange(newValue)}
-      /></LocalizationProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="th">
+          <DateTimePicker
+            label="Controlled picker"
+            value={dayjs(value)}
+            onChange={(newValue) => onChange(newValue)}
+          />
+        </LocalizationProvider>
       ),
-    }
+    },
   ]);
 
   // get variables from auth provider
@@ -102,80 +103,77 @@ function MaterialTableComponent() {
   useEffect(() => {
     // Data Shape: id (INT), userId (STR), name (STR), when (STR in DATETIME format), user (คือรัย)
 
-    // axios
-    //   .get(`https://localhost:7294/Activities/`, {
-    //     headers: {
-    //       Authorization: "Bearer " + token,
-    //       timeout: 10 * 1000,
-    //     },
-    //   })
-    //   .then((response) => {
-      // แก้ให้แยก date time เพิ่ม
-    //     setData(response.data);
-    //     console.log(response.data);
-    //   })
-    //   .catch((error) => {
-    //     if (error.code === "ECONNABORTED") {
-    //       console.log("timeout");
-    //     } else {
-    //       console.log(error.response.status);
-    //       console.log(error);
-    //     }
-    //   });
-    setData([{id:123, userId:1234, name:"kill myself", datetime:"2022-04-17T15:30", user:"test"},
-             {id:124, userId:1234, name:"now", datetime:'2022-04-17T15:50', user:"test"}])
-
-
-  }, [update]);
-
-  const rowUpdateHandler = (data) => {
-    data.datetime = dayjs(data.datetime).format("YYYY-MM-DDTHH:mm:ss");
-    var addRow = {name:data.name, datetime:data.datetime}
-    // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
-    console.log(`Updating id: ${data.id}`);
-    console.log(addRow);
     axios
-      .put(`https://localhost:7294/Activities/${data.id}`, {
+      .get(`https://localhost:7294/Activities/`, {
         headers: {
           Authorization: "Bearer " + token,
           timeout: 10 * 1000,
         },
-        body: {addRow},
+      })
+      .then((response) => {
+        setData(response.data);
+        console.log(response.data);
+      })
+      .catch((error) => {
+        if (error.code === "ECONNABORTED") {
+          console.log("timeout");
+        } else {
+          console.log(error.response.status);
+          console.log(error);
+        }
       });
-      setUpdate(update+1);
+    // setData([{id:123, userId:1234, name:"kill myself", datetime:"2022-04-17T15:30", user:"test"},
+    //          {id:124, userId:1234, name:"now", datetime:'2022-04-17T15:50', user:"test"}])
+  }, [update]);
+
+  const rowUpdateHandler = (data) => {
+    data.when = dayjs(data.when).format("YYYY-MM-DDTHH:mm:ss");
+    var addRow = { name: data.name, when: data.when };
+    // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
+    console.log(`Updating id: ${data.id}`);
+    console.log(addRow);
+    console.log(token);
+    axios.put(
+      `https://localhost:7294/Activities/${data.id}`,
+      { name: data.name, when: data.when },
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+          timeout: 10 * 1000,
+        },
+      }
+    );
+    setUpdate(update + 1);
   };
 
-
-
   const rowAddHandler = (data) => {
-    
-    data.datetime = dayjs(data.datetime).format("YYYY-MM-DDTHH:mm:ss");
-    var addRow = {name:data.name, datetime:data.datetime}
+    data.when = dayjs(data.when).format("YYYY-MM-DDTHH:mm:ss");
+    var addRow = { name: data.name, when: data.when };
     console.log(addRow);
-    axios
-    .post(`https://localhost:7294/Activities/`, {
-          headers: {
-            Authorization: "Bearer " + token,
-            timeout: 10 * 1000,
-          },
-          body: {addRow}}
+    axios.post(
+      `https://localhost:7294/Activities/`,
+      { name: data.name, when: data.when },
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+          timeout: 10 * 1000,
+        },
+      }
     );
-    setUpdate(update+1);
+    setUpdate(update + 1);
   };
 
   const rowDeleteHandler = (data) => {
     // อันนี้ไม่รู้ว่า API มันรับค่าทั้งตารางได้มั้ย หรือมะปรางเขียนให้มันทำได้มั้ย อันนี้เขียนเป็นตัวอย่างไว้ ไม่แน่ใจต้องแก้เพิ่มยังไง
     console.log(`Deleting id: ${data.id}`);
-    axios
-    .delete(`https://localhost:7294/Activities/${data.id}`, {
+    axios.delete(`https://localhost:7294/Activities/${data.id}`, {
       headers: {
         Authorization: "Bearer " + token,
         timeout: 10 * 1000,
-      }
-    }
-    );
-    setUpdate(update+1);
-  }
+      },
+    });
+    setUpdate(update + 1);
+  };
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
